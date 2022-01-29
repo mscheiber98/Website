@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>WebGL Test</title>
+</head>
+
+<body>
+    <script src="./webgl-debug.js"></script>
+    <script src="./webgl-utils.js"></script>
+    <script src="./J3DI.js"></script>
+    <script src="./J3DIMath.js"></script>
+
+
+    <h1>WebGL Testseite</h1>
+    <canvas id="canvas" style="border: 3px solid;" width="500px" height="500px"></canvas>
+    <script id="vshader" type="x-shader/x-vertex">
+        uniform mat4 u_MVP;
+        uniform mat4 u_normalMatrix;
+       
+        attribute vec3 vertexNormal;
+        attribute vec4 vertexTexCoords;
+        attribute vec4 vertexPosition;
+
+        varying vec3 transNormal;
+        varying vec2 texCoords;
+
+        void main(){
+            gl_Position = u_MVP * vertexPosition;
+            transNormal = vec3(u_normalMatrix * vec4(vertexNormal, 1.0));
+            texCoords = vertexTexCoords.st;
+        }
+    </script>
+
+    <script id="fshader" type="x-shader/x-fragment">
+        precision mediump float;
+
+        uniform sampler2D texture;
+        uniform vec3 lightDir;
+
+        varying vec3 transNormal;
+        varying vec2 texCoords;
+
+        void main(){
+            float lightInt = max(dot(transNormal.xyz, lightDir), 0.0);
+            vec2 texCoords_new = vec2(texCoords.s, 1.0 - texCoords.t);
+            vec4 color = texture2D(texture, texCoords);
+            gl_FragColor = vec4(color.xyz * lightInt, color.a);
+
+
+        }
+    </script>
+    <script>
+        function init() {
+
+            //initialize
+            var gl = initWebGL("canvas");
+            if (!gl) {
+                return;
+            }
+
+            gl.program = simpleSetup(gl, "vshader", "fshader", ["vertexNormal", "vertexTexCoords", "vertexPosition"], [0, 0, 0, 1], 10000);
+
+            //uniform variables
+            gl.uniform3f(gl.getUniformLocation(gl.program, "lightDir"), 0.0, 0.0, 1.0);
+            gl.uniform1i(gl.getUniformLocation(gl.program, "texture"), 0);
+
+            //create box data
+            gl.box = makeBox(gl);
+
+            //load texture image
+            glassTexture = loadImageTexture(gl, "./random-grid.jpg");
+
+            //create matrices and save their shader locations
+            gl.mvMatrix = new J3DIMatrix4();
+
+            gl.u_normalMatrixLoc = gl.getUniformLocation(gl.program, "u_normalMatrix");
+            gl.normalMatrix = new J3DIMatrix4();
+
+            gl.u_MVPmatrixLoc = gl.getUniformLocation(gl.program, "u_MVP");
+            gl.MVPmatrix = new J3DIMatrix4();
+
+            // enable vertex attribute arrays
+            gl.enableVertexAttribArray(0);
+            gl.enableVertexAttribArray(1);
+            gl.enableVertexAttribArray(2);
+
+            //setup vertex attributes
+            //position
+            gl.bindBuffer(gl.ARRAY_BUFFER, gl.box.vertexObject);
+            gl.vertexAttribPointer(2, 3, gl.FLOAT, false, 0, 0);
+            //texCoords
+            gl.bindBuffer(gl.ARRAY_BUFFER, gl.box.texCoordObject);
+            gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 0, 0);
+            //normals
+            gl.bindBuffer(gl.ARRAY_BUFFER, gl.box.normalObject);
+            gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
+
+            //bind index array
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, gl.box.indexObject);
+
+            return gl;
+
+        }
+
+        function reshape(gl) {
+            // if the display size of the canvas has changed
+            // change the size we render at to match.
+            var canvas = document.getElementById("canvas");
+
+            if (canvas.clientWidth == canvas.width && canvas.clientHeight == canvas.height) {
+                return;
+            }
+
+            canvas.width = canvas.clientWidth;
+            canvas.height = canvas.clientHeight;
+
+            //set viewport and projection matrix
+            gl.viewport(0, 0, canvas.clientWidth, canvas.clientHeight);
+            gl.PMatrix = new J3DIMatrix4();
+            g.PMatrix.lookat(0, 0, 7, 0, 0, 0, 0, 1, 0);
+            gl.PMatrix.perspectiveMatrix(30, canvas.clientWidth / canvas.clientHeight,1 , 10000);
+       }
+
+       function drawPicture(gl){
+           //make sure canvas is correct size and set viewport and perspektive matrix
+           reshape(gl);
+
+           //clear canvas/framebuffer
+           gl.clearColor(0.0, 0.5, 0.0, 1.0);
+           gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+           //create MV matrix
+           gl.mvMatrix.makeIdentity();
+           gl.mvMatrix.rotate(20, 1, 0, 0);
+
+           //create normalMatrix
+           gl.normalMatrix.load(gl.mvMatrix);
+           gl.normalMatrix.invert();
+           gl.normalMatrix.transpose();
+           gl.normalMatrix.setUniform(gl, gl.u_normalMatrixLoc, false);
+
+           //create MVP matrix
+           gl.MVPmatrix.load(gl.PMatrix);
+           gl.MVPmatrix.multiply(gl.mvMatrix);
+           gl.MVPmatrix.setUniform(gl, gl.u_MVPmatrixLoc, false);
+
+           //bind texture
+           gl.bindTexture(gl.TEXTURE_2D, glassTexture);
+
+           //draw
+           gl.drawElements(gl.TRIANGLES, gl.box.numIndices, gl.UNSIGNED_BYTE, 0);
+
+       }
+
+       init();
+       drawPicture(gl);
+    </script>
+</body>
