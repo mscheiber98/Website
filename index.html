@@ -3,157 +3,163 @@
 <head>
     <meta charset="UTF-8">
     <title>WebGL Test</title>
+    <script src="J3DIMath.js"></script>
 </head>
 
 <body>
-    <script src="./webgl-debug.js"></script>
-    <script src="./webgl-utils.js"></script>
-    <script src="./J3DI.js"></script>
-    <script src="./J3DIMath.js"></script>
-
-
     <h1>WebGL Testseite</h1>
     <canvas id="canvas" style="border: 3px solid;" width="500px" height="500px"></canvas>
-    <script id="vshader" type="x-shader/x-vertex">
-        uniform mat4 u_MVP;
-        uniform mat4 u_normalMatrix;
-       
-        attribute vec3 vertexNormal;
-        attribute vec4 vertexTexCoords;
-        attribute vec4 vertexPosition;
 
-        varying vec3 transNormal;
-        varying vec2 texCoords;
-
-        void main(){
-            gl_Position = u_MVP * vertexPosition;
-            transNormal = vec3(u_normalMatrix * vec4(vertexNormal, 1.0));
-            texCoords = vertexTexCoords.st;
-        }
-    </script>
-
-    <script id="fshader" type="x-shader/x-fragment">
-        precision mediump float;
-
-        uniform sampler2D texture;
-        uniform vec3 lightDir;
-
-        varying vec3 transNormal;
-        varying vec2 texCoords;
-
-        void main(){
-            float lightInt = max(dot(transNormal.xyz, lightDir), 0.0);
-            vec2 texCoords_new = vec2(texCoords.s, 1.0 - texCoords.t);
-            vec4 color = texture2D(texture, texCoords);
-            gl_FragColor = vec4(color.xyz * lightInt, color.a);
-
-
-        }
-    </script>
     <script>
-        function init() {
+        var vertexShaderSource = `
+       precision mediump float;
 
-            //initialize
-            var gl = initWebGL("canvas");
-            if (!gl) {
-                return;
+       attribute vec3 position;
+       attribute vec3 normal;
+
+       uniform mat4 MVP;
+       uniform mat4 normalMatrix;
+
+       varying vec3 normal_out;
+     
+       void main(){
+           gl_Position = MVP * vec4(position, 1.0);
+           normal_out = (normalMatrix * vec4(normal, 1.0)).xyz;
+
+       }
+       `
+        var fragmentShaderSource = `
+       precision mediump float;
+
+       uniform vec3 lightDir;
+
+       varying vec3 normal_out;
+
+       void main(){
+        
+           float lightInt = max(dot(normal_out, -lightDir), 0.0);
+           gl_FragColor = vec4(0.5*lightInt, 0.5*lightInt, 0.5*lightInt, 1.0);
+       }
+       `
+
+        var InitGL = function () {
+            var canvas = document.getElementById("canvas")
+            var context = canvas.getContext("experimental-webgl")
+            if (!context) {
+                alert("Browser does not support WebGL.")
             }
 
-            gl.program = simpleSetup(gl, "vshader", "fshader", ["vertexNormal", "vertexTexCoords", "vertexPosition"], [0, 0, 0, 1], 10000);
+            context.clearColor(0.2, 0.3, 0.8, 1.0)
+            context.clear(context.COLOR_BUFFER_BIT | context.DEPTH_BUFFER_BIT)
 
-            //uniform variables
-            gl.uniform3f(gl.getUniformLocation(gl.program, "lightDir"), 0.0, 0.0, 1.0);
-            gl.uniform1i(gl.getUniformLocation(gl.program, "texture"), 0);
+            //create shaders
+            var vertexShader = context.createShader(context.VERTEX_SHADER);
+            var fragmentShader = context.createShader(context.FRAGMENT_SHADER);
 
-            //create box data
-            gl.box = makeBox(gl);
+            context.shaderSource(vertexShader, vertexShaderSource);
+            context.shaderSource(fragmentShader, fragmentShaderSource);
 
-            //load texture image
-            glassTexture = loadImageTexture(gl, "./random-grid.jpg");
+            context.compileShader(vertexShader)
+            if (!context.getShaderParameter(vertexShader, context.COMPILE_STATUS)) {
+                console.error("Error compiling the vertex shader.", context.getShaderInfoLog(vertexShader))
+                return
+            }
 
-            //create matrices and save their shader locations
-            gl.mvMatrix = new J3DIMatrix4();
+            context.compileShader(fragmentShader)
+            if (!context.getShaderParameter(fragmentShader, context.COMPILE_STATUS)) {
+                console.error("Error compiling the fragment shader.", context.getShaderInfoLog(fragmentShader))
+                return
+            }
 
-            gl.u_normalMatrixLoc = gl.getUniformLocation(gl.program, "u_normalMatrix");
-            gl.normalMatrix = new J3DIMatrix4();
+            //create program, link and check for possible errors
+            var program = context.createProgram()
+            context.attachShader(program, vertexShader)
+            context.attachShader(program, fragmentShader)
+            context.linkProgram(program)
+            if (!context.getProgramParameter(program, context.LINK_STATUS)) {
+                console.error("Error linking program.", context.getProgramInfoLog(program))
+                return
+            }
+            context.validateProgram(program)
+            if (!context.getProgramParameter(program, context.VALIDATE_STATUS)) {
+                console.error("Error validating program.", context.getProgramInfoLog(program))
+                return
+            }
 
-            gl.u_MVPmatrixLoc = gl.getUniformLocation(gl.program, "u_MVP");
-            gl.MVPmatrix = new J3DIMatrix4();
+            //create triangle and buffers
+            var vertices = [
+                -0.5, -0.5, 0.0, 0.0, 0.0, 1.0,
+                0.5, -0.5, 0.0, 0.0, 0.0, 1.0,
+                0.0, 0.5, 0.0, 0.0, 0.0, 1.0,
+                
+                0.5, -0.5, 0.0, 1.0, 0.0, 0.0,
+                0.5, -0.5, -1.0, 1.0, 0.0, 0.0,
+                0.5, 0.5, -0.5, 1.0, 0.0, 0.0
+            ]
+            var vertexBuffer = context.createBuffer()
+            context.bindBuffer(context.ARRAY_BUFFER, vertexBuffer)
+            context.bufferData(context.ARRAY_BUFFER, new Float32Array(vertices), context.STATIC_DRAW)
+            var positionAttribLocation = context.getAttribLocation(program, 'position')
+            var normalAttribLocation = context.getAttribLocation(program, 'normal')
+            context.vertexAttribPointer(
+                positionAttribLocation,
+                3,
+                context.FLOAT,
+                context.FALSE,
+                6 * Float32Array.BYTES_PER_ELEMENT,
+                0
+            )
+            context.vertexAttribPointer(
+                normalAttribLocation,
+                3,
+                context.FLOAT,
+                context.FALSE,
+                6 * Float32Array.BYTES_PER_ELEMENT,
+                3 * Float32Array.BYTES_PER_ELEMENT
+            )
+            context.enableVertexAttribArray(positionAttribLocation);
+            context.enableVertexAttribArray(normalAttribLocation);
 
-            // enable vertex attribute arrays
-            gl.enableVertexAttribArray(0);
-            gl.enableVertexAttribArray(1);
-            gl.enableVertexAttribArray(2);
+            //uniforms
+            var u_MVPLocation = context.getUniformLocation(program, "MVP")
+            var u_normalMatrixLocation = context.getUniformLocation(program, "normalMatrix")
+            var u_lightDirLocation = context.getUniformLocation(program, "lightDir")
 
-            //setup vertex attributes
-            //position
-            gl.bindBuffer(gl.ARRAY_BUFFER, gl.box.vertexObject);
-            gl.vertexAttribPointer(2, 3, gl.FLOAT, false, 0, 0);
-            //texCoords
-            gl.bindBuffer(gl.ARRAY_BUFFER, gl.box.texCoordObject);
-            gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 0, 0);
-            //normals
-            gl.bindBuffer(gl.ARRAY_BUFFER, gl.box.normalObject);
-            gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
 
-            //bind index array
-            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, gl.box.indexObject);
+            var drawScene = function (timestamp) {
+                //clear screen
+                context.clearColor(0.2, 0.3, 0.8, 1.0)
+                context.clear(context.COLOR_BUFFER_BIT | context.DEPTH_BUFFER_BIT)
 
-            return gl;
+                //set shader program
+                context.useProgram(program);
+
+                //set uniforms
+                let MVP = new J3DIMatrix4()
+                MVP.makeIdentity()
+                let angle = timestamp/10 % 360
+                MVP.rotate(angle, 0, 1, 0)
+                MVP.setUniform(context, u_MVPLocation, false)
+
+                let normalMatrix = new J3DIMatrix4()
+                normalMatrix.load(MVP)
+                normalMatrix.invert()
+                normalMatrix.transpose()
+                normalMatrix.setUniform(context, u_normalMatrixLocation, false)
+
+                let lightDir = [-1, 0, 0]
+                context.uniform3f(u_lightDirLocation, lightDir[0], lightDir[1], lightDir[2])
+
+                //draw call
+                context.drawArrays(context.TRIANGLES, 0, vertices.length/6)
+ 
+                window.requestAnimationFrame(drawScene)
+            }
+
+            window.requestAnimationFrame(drawScene)
 
         }
 
-        function reshape(gl) {
-            // if the display size of the canvas has changed
-            // change the size we render at to match.
-            var canvas = document.getElementById("canvas");
-
-            if (canvas.clientWidth == canvas.width && canvas.clientHeight == canvas.height) {
-                return;
-            }
-
-            canvas.width = canvas.clientWidth;
-            canvas.height = canvas.clientHeight;
-
-            //set viewport and projection matrix
-            gl.viewport(0, 0, canvas.clientWidth, canvas.clientHeight);
-            gl.PMatrix = new J3DIMatrix4();
-            g.PMatrix.lookat(0, 0, 7, 0, 0, 0, 0, 1, 0);
-            gl.PMatrix.perspectiveMatrix(30, canvas.clientWidth / canvas.clientHeight,1 , 10000);
-       }
-
-       function drawPicture(gl){
-           //make sure canvas is correct size and set viewport and perspektive matrix
-           reshape(gl);
-
-           //clear canvas/framebuffer
-           gl.clearColor(0.0, 0.5, 0.0, 1.0);
-           gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
-           //create MV matrix
-           gl.mvMatrix.makeIdentity();
-           gl.mvMatrix.rotate(20, 1, 0, 0);
-
-           //create normalMatrix
-           gl.normalMatrix.load(gl.mvMatrix);
-           gl.normalMatrix.invert();
-           gl.normalMatrix.transpose();
-           gl.normalMatrix.setUniform(gl, gl.u_normalMatrixLoc, false);
-
-           //create MVP matrix
-           gl.MVPmatrix.load(gl.PMatrix);
-           gl.MVPmatrix.multiply(gl.mvMatrix);
-           gl.MVPmatrix.setUniform(gl, gl.u_MVPmatrixLoc, false);
-
-           //bind texture
-           gl.bindTexture(gl.TEXTURE_2D, glassTexture);
-
-           //draw
-           gl.drawElements(gl.TRIANGLES, gl.box.numIndices, gl.UNSIGNED_BYTE, 0);
-
-       }
-
-       init();
-       drawPicture(gl);
+        InitGL();
     </script>
 </body>
