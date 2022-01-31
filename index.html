@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>WebGL Test</title>
-    <script src="J3DIMath.js"></script>
+    <script src="lib/gl-matrix.js"></script>
 </head>
 
 <body>
@@ -17,13 +17,15 @@
        attribute vec3 position;
        attribute vec3 normal;
 
-       uniform mat4 MVP;
+       uniform mat4 Model;
+       uniform mat4 View;
+       uniform mat4 Projection;
        uniform mat4 normalMatrix;
 
        varying vec3 normal_out;
      
        void main(){
-           gl_Position = MVP * vec4(position, 1.0);
+           gl_Position = Projection * View * Model * vec4(position, 1.0);
            normal_out = (normalMatrix * vec4(normal, 1.0)).xyz;
 
        }
@@ -86,19 +88,54 @@
                 return
             }
 
-            //create triangle and buffers
-            var vertices = [
-                -0.5, -0.5, 0.0, 0.0, 0.0, 1.0,
-                0.5, -0.5, 0.0, 0.0, 0.0, 1.0,
-                0.0, 0.5, 0.0, 0.0, 0.0, 1.0,
-                
-                0.5, -0.5, 0.0, 1.0, 0.0, 0.0,
-                0.5, -0.5, -1.0, 1.0, 0.0, 0.0,
-                0.5, 0.5, -0.5, 1.0, 0.0, 0.0
+            //create model data and buffers
+            //position 3f, texcoords 2f, normals 3f
+            var cube = [
+                -0.5, -0.5, -0.5, 0.0, 0.0, 0.0, 0.0, -1.0,
+                0.5, -0.5, -0.5, 1.0, 0.0, 0.0, 0.0, -1.0,
+                0.5, 0.5, -0.5, 1.0, 1.0, 0.0, 0.0, -1.0, //hinten
+                0.5, 0.5, -0.5, 1.0, 1.0, 0.0, 0.0, -1.0,
+                -0.5, 0.5, -0.5, 0.0, 1.0, 0.0, 0.0, -1.0,
+                -0.5, -0.5, -0.5, 0.0, 0.0, 0.0, 0.0, -1.0,
+
+                -0.5, -0.5, 0.5, 0.0, 0.0, 0.0, 0.0, 1.0,
+                0.5, -0.5, 0.5, 1.0, 0.0, 0.0, 0.0, 1.0,
+                0.5, 0.5, 0.5, 1.0, 1.0, 0.0, 0.0, 1.0,
+                0.5, 0.5, 0.5, 1.0, 1.0, 0.0, 0.0, 1.0, //vorne	
+                -0.5, 0.5, 0.5, 0.0, 1.0, 0.0, 0.0, 1.0,
+                -0.5, -0.5, 0.5, 0.0, 0.0, 0.0, 0.0, 1.0,
+
+                -0.5, 0.5, 0.5, 1.0, 0.0, -1.0, 0.0, 0.0,
+                -0.5, 0.5, -0.5, 1.0, 1.0, -1.0, 0.0, 0.0,
+                -0.5, -0.5, -0.5, 0.0, 1.0, -1.0, 0.0, 0.0,
+                -0.5, -0.5, -0.5, 0.0, 1.0, -1.0, 0.0, 0.0,//links
+                -0.5, -0.5, 0.5, 0.0, 0.0, -1.0, 0.0, 0.0,
+                -0.5, 0.5, 0.5, 1.0, 0.0, -1.0, 0.0, 0.0,
+
+                0.5, 0.5, 0.5, 1.0, 0.0, 1.0, 0.0, 0.0,
+                0.5, 0.5, -0.5, 1.0, 1.0, 1.0, 0.0, 0.0,
+                0.5, -0.5, -0.5, 0.0, 1.0, 1.0, 0.0, 0.0,//rechts
+                0.5, -0.5, -0.5, 0.0, 1.0, 1.0, 0.0, 0.0,
+                0.5, -0.5, 0.5, 0.0, 0.0, 1.0, 0.0, 0.0,
+                0.5, 0.5, 0.5, 1.0, 0.0, 1.0, 0.0, 0.0,
+
+                -0.5, -0.5, -0.5, 0.0, 1.0, 0.0, -1.0, 0.0,
+                0.5, -0.5, -0.5, 1.0, 1.0, 0.0, -1.0, 0.0,
+                0.5, -0.5, 0.5, 1.0, 0.0, 0.0, -1.0, 0.0,//unten
+                0.5, -0.5, 0.5, 1.0, 0.0, 0.0, -1.0, 0.0,
+                -0.5, -0.5, 0.5, 0.0, 0.0, 0.0, -1.0, 0.0,
+                -0.5, -0.5, -0.5, 0.0, 1.0, 0.0, -1.0, 0.0,
+
+                -0.5, 0.5, -0.5, 0.0, 1.0, 0.0, 1.0, 0.0,
+                0.5, 0.5, -0.5, 1.0, 1.0, 0.0, 1.0, 0.0,
+                0.5, 0.5, 0.5, 1.0, 0.0, 0.0, 1.0, 0.0,//oben
+                0.5, 0.5, 0.5, 1.0, 0.0, 0.0, 1.0, 0.0,
+                -0.5, 0.5, 0.5, 0.0, 0.0, 0.0, 1.0, 0.0,
+                -0.5, 0.5, -0.5, 0.0, 1.0, 0.0, 1.0, 0.0
             ]
             var vertexBuffer = context.createBuffer()
             context.bindBuffer(context.ARRAY_BUFFER, vertexBuffer)
-            context.bufferData(context.ARRAY_BUFFER, new Float32Array(vertices), context.STATIC_DRAW)
+            context.bufferData(context.ARRAY_BUFFER, new Float32Array(cube), context.STATIC_DRAW)
             var positionAttribLocation = context.getAttribLocation(program, 'position')
             var normalAttribLocation = context.getAttribLocation(program, 'normal')
             context.vertexAttribPointer(
@@ -106,7 +143,7 @@
                 3,
                 context.FLOAT,
                 context.FALSE,
-                6 * Float32Array.BYTES_PER_ELEMENT,
+                8 * Float32Array.BYTES_PER_ELEMENT,
                 0
             )
             context.vertexAttribPointer(
@@ -114,14 +151,17 @@
                 3,
                 context.FLOAT,
                 context.FALSE,
-                6 * Float32Array.BYTES_PER_ELEMENT,
-                3 * Float32Array.BYTES_PER_ELEMENT
+                8 * Float32Array.BYTES_PER_ELEMENT,
+                5 * Float32Array.BYTES_PER_ELEMENT,
+                0
             )
             context.enableVertexAttribArray(positionAttribLocation);
             context.enableVertexAttribArray(normalAttribLocation);
 
             //uniforms
-            var u_MVPLocation = context.getUniformLocation(program, "MVP")
+            var u_ModelLocation = context.getUniformLocation(program, "Model")
+            var u_ViewLocation = context.getUniformLocation(program, "View")
+            var u_ProjectionLocation = context.getUniformLocation(program, "Projection")
             var u_normalMatrixLocation = context.getUniformLocation(program, "normalMatrix")
             var u_lightDirLocation = context.getUniformLocation(program, "lightDir")
 
@@ -130,32 +170,47 @@
                 //clear screen
                 context.clearColor(0.2, 0.3, 0.8, 1.0)
                 context.clear(context.COLOR_BUFFER_BIT | context.DEPTH_BUFFER_BIT)
+                context.viewport(0, 0, canvas.clientWidth, canvas.clientHeight);
+
 
                 //set shader program
                 context.useProgram(program);
 
                 //set uniforms
-                let MVP = new J3DIMatrix4()
-                MVP.makeIdentity()
-                let angle = timestamp/10 % 360
-                MVP.rotate(angle, 0, 1, 0)
-                MVP.setUniform(context, u_MVPLocation, false)
+                let angle = glMatrix.glMatrix.toRadian(timestamp / 10 % 360)
 
-                let normalMatrix = new J3DIMatrix4()
-                normalMatrix.load(MVP)
-                normalMatrix.invert()
-                normalMatrix.transpose()
-                normalMatrix.setUniform(context, u_normalMatrixLocation, false)
+                let Model = glMatrix.mat4.create()
+                glMatrix.mat4.rotate(Model, Model, angle, new Float32Array([0, 1, 0]))
+                context.uniformMatrix4fv(u_ModelLocation, false, Model)
 
-                let lightDir = [-1, 0, 0]
+                let View = glMatrix.mat4.create()
+                let eyePos = glMatrix.vec3.fromValues(5, 5, 5)
+                let center = glMatrix.vec3.fromValues(0, 0, 0)
+                let up = glMatrix.vec3.fromValues(0, 1, 0)
+                glMatrix.mat4.lookAt(View, eyePos, center, up)
+                context.uniformMatrix4fv(u_ViewLocation, false, View)
+
+                let Projection = glMatrix.mat4.create()
+                glMatrix.mat4.perspective(Projection, glMatrix.glMatrix.toRadian(45), canvas.width / canvas.height, 0.1, 1000)
+                context.uniformMatrix4fv(u_ProjectionLocation, false, Projection)
+
+                let normalMatrix = glMatrix.mat4.create()
+                glMatrix.mat4.multiply(normalMatrix, View, Model)
+                glMatrix.mat4.invert(normalMatrix, normalMatrix)
+                glMatrix.mat4.transpose(normalMatrix, normalMatrix)
+                context.uniformMatrix4fv(u_normalMatrixLocation, false, normalMatrix)
+
+                let lightDir = [-1, -1, 0]
                 context.uniform3f(u_lightDirLocation, lightDir[0], lightDir[1], lightDir[2])
 
                 //draw call
-                context.drawArrays(context.TRIANGLES, 0, vertices.length/6)
- 
+                context.drawArrays(context.TRIANGLES, 0, cube.length / 8)
+
                 window.requestAnimationFrame(drawScene)
             }
 
+            context.enable(context.DEPTH_TEST)
+            context.enable(context.BLEND)
             window.requestAnimationFrame(drawScene)
 
         }
