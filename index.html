@@ -3,13 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <title>WebGL Test</title>
+
+   <link href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" rel="stylesheet">
+
     <script src="lib/gl-matrix.js"></script>
 </head>
 
 <body>
-    <h1>WebGL Testseite</h1>
+    <div id="app">
+        <menu-bar></menu-bar>
+    </div>
+    <h1 class="font-mono">WebGL Testseite</h1>
     <canvas id="canvas" style="border: 3px solid;" width="500px" height="500px"></canvas>
 
+
+    <!-- Import Vue 3 -->
+    <script src="https://unpkg.com/vue@next"></script>
+    <!-- Import App-->
+    <script src="./app.js"></script>
+    <!-- Import Components -->
+    <script src="menu-bar.js"></script>
+
+    <!-- Mount App-->
+    <script>
+        const ViewModel = app.mount("#app")
+    </script>
     <script>
         var vertexShaderSource = `
        precision mediump float;
