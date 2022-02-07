@@ -11,7 +11,7 @@ app.component("menu-bar", {
                 </div>
                 <div class="space-x-4">
                     <a href="#" class="bg-gray-200 p-4 border-4 border-black">Login</a>
-                    <a href="#" class="bg-gray-200 p-4 border-4 border-black">SignUp</a>
+                    <a href="apply-javascript.html" class="bg-gray-200 p-4 border-4 border-black">SignUp</a>
                 </div>
             </div>
         </div>

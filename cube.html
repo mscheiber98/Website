@@ -4,15 +4,12 @@
     <meta charset="UTF-8">
     <title>Würfel</title>
     <script src="lib/gl-matrix.js"></script>
-    <link href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" rel="stylesheet">   
+    <link href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" rel="stylesheet">
 </head>
 
-<body>
-    <div class="flex justify-center items-center h-screen">
-        <div>
-            <h1 class="font-mono">WebGL Testseite</h1>
-            <canvas id="canvas" style="border: 3px solid;"  width="1920px" height="1080px" ></canvas>
-        </div>
+<body class="h-screen">
+    <div class="flex justify-center items-center h-full">
+        <canvas id="canvas" class="h-auto w-auto"></canvas>
     </div>
 
     <script>
@@ -172,9 +169,12 @@
 
 
             var drawScene = function (timestamp) {
+
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
                 //clear screen
                 context.clearColor(0.2, 0.3, 0.8, 1.0)
-                context.clear(context.COLOR_BUFFER_BIT | context.DEPTH_BUFFER_BIT)
+                context.clear(context.COLOR_BUFFER_BIT | context.DEPTH_BUFFER_BIT)            
                 context.viewport(0, 0, canvas.clientWidth, canvas.clientHeight);
 
 
