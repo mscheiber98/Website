@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Nice Background Animation</title>
+    <script src="lib/gl-matrix.js"></script>
+    <link href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" rel="stylesheet">
+</head>
+
+<body class="h-screen">
+    <div class="flex justify-center items-center">
+        <canvas id="canvas"></canvas>
+    </div>
+
+    <script>
+        const canvas = document.getElementById("canvas");
+        const ctx = canvas.getContext("2d");
+
+        let midX;
+        let midY;
+
+        resizeCanvas();
+        window.addEventListener("resize", resizeCanvas);
+
+        function resizeCanvas () {
+
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            getMid();
+            draw();
+
+
+        }
+
+        function getMid () {
+            midX = Math.round(canvas.width / 2);
+            midY = Math.round(canvas.height / 2);
+        }
+
+        function draw () {
+            ctx.fillRect(midX - 25, midY - 25, 50, 50);
+        }
+
+
+    </script>
+</body>
+
+</html>

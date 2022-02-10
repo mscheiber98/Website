@@ -10,8 +10,8 @@ app.component("menu-bar", {
                     <a href="./cube.html" class="bg-gray-200 p-4 border-4 border-black">Würfel</a>
                 </div>
                 <div class="space-x-4">
-                    <a href="#" class="bg-gray-200 p-4 border-4 border-black">Login</a>
-                    <a href="apply-javascript.html" class="bg-gray-200 p-4 border-4 border-black">SignUp</a>
+                    <a href="./background-canvas.html" class="bg-gray-200 p-4 border-4 border-black">Background Canvas</a>
+                    <a href="./number-guessing-game.html" class="bg-gray-200 p-4 border-4 border-black">Number Guessing Game</a>
                 </div>
             </div>
         </div>
