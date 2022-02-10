@@ -20,26 +20,75 @@
         let midX;
         let midY;
 
+        let mouseX;
+        let mouseY;
+
         resizeCanvas();
         window.addEventListener("resize", resizeCanvas);
+        canvas.addEventListener("mousemove", function (e) {
+            let cRect = canvas.getBoundingClientRect();
+
+            //relative position of the canvas
+            let canvX = cRect.x;
+            let canvY = cRect.y;
+
+            //general position of mouse
+            let mousePosX = e.clientX;
+            let mousePosY = e.clientY;
+
+            //position of mouse on canvas
+            mouseX = Math.round(mousePosX - canvX);
+            mouseY = Math.round(mousePosY - canvY);
+
+            //display mouse position on canvas
+            ctx.font = "16px Mono";
+            ctx.clearRect(0, 0, 10000, 10000);
+            ctx.strokeRect(0, 0, 127, 30);
+            ctx.fillText("X: " + mouseX + " Y: " + mouseY, 10, 20);
+
+            draw();
+
+        })
 
         function resizeCanvas () {
-
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
             getMid();
             draw();
-
-
         }
 
         function getMid () {
             midX = Math.round(canvas.width / 2);
             midY = Math.round(canvas.height / 2);
+            ctx.fill();
         }
 
         function draw () {
-            ctx.fillRect(midX - 25, midY - 25, 50, 50);
+
+            //radius of the point
+            let rInner = 10;
+            //radius of the outer border circle
+            let rOuter = 50;
+
+            //direction where the mouse points to realtive to the middle of the canvas
+            let dirX = mouseX - midX;
+            let dirY = mouseY - midY;
+
+            //offset of the point to the middle because of mouse position, point should follow the mouse, but only in it's outer circle borders
+            let pointX = midX + Math.max(dirX, rOuter);
+            let pointY = midY + Math.max(dirY, rOuter);
+
+            ctx.beginPath();
+            ctx.arc(mouseX, mouseY, 10, 0, Math.PI * 2, true);
+            ctx.fill();
+            ctx.closePath();
+            ctx.beginPath();
+            ctx.arc(midX, midY, 50, 0, Math.PI * 2, true);
+            ctx.stroke();
+            ctx.closePath();
+
+
+
         }
 
 
