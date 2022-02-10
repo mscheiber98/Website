@@ -50,45 +50,55 @@
 
         })
 
-        function resizeCanvas () {
+        function resizeCanvas() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
             getMid();
             draw();
         }
 
-        function getMid () {
+        function getMid() {
             midX = Math.round(canvas.width / 2);
             midY = Math.round(canvas.height / 2);
             ctx.fill();
         }
 
-        function draw () {
+        function draw() {
 
-            //radius of the point
-            let rInner = 10;
-            //radius of the outer border circle
-            let rOuter = 50;
+            drawEye(midX - 100, midY, 50);
+            drawEye(midX + 100, midY, 50)
 
-            //direction where the mouse points to realtive to the middle of the canvas
-            let dirX = mouseX - midX;
-            let dirY = mouseY - midY;
 
-            //offset of the point to the middle because of mouse position, point should follow the mouse, but only in it's outer circle borders
-            let pointX = midX + Math.max(dirX, rOuter);
-            let pointY = midY + Math.max(dirY, rOuter);
+        }
 
+        function drawEye(posX, posY, r) {
+
+            let innerBorderRadius = r / 2;
+            let pupilRadius = r / 3;
+
+            //directionvector from eye to mouse
+            let dirX = mouseX - posX;
+            let dirY = mouseY - posY;
+            //calculate length of vector
+            let len = Math.sqrt(Math.pow(dirX, 2) + Math.pow(dirY, 2));
+
+            //trim vector if it's outside the inner eye border, i.e. if it's longer than r/2
+            //this way the pupil stays always inside the eye
+            if (len > innerBorderRadius) {
+                dirX = (dirX / len) * innerBorderRadius;
+                dirY = (dirY / len) * innerBorderRadius;
+            }
+
+            //draw pupil
             ctx.beginPath();
-            ctx.arc(mouseX, mouseY, 10, 0, Math.PI * 2, true);
+            ctx.arc(posX + dirX, posY + dirY, pupilRadius, 0, Math.PI * 2, true);
             ctx.fill();
             ctx.closePath();
+            //draw outer circle
             ctx.beginPath();
-            ctx.arc(midX, midY, 50, 0, Math.PI * 2, true);
+            ctx.arc(posX, posY, r, 0, Math.PI * 2, true);
             ctx.stroke();
             ctx.closePath();
-
-
-
         }
 
 
