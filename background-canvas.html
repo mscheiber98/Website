@@ -3,32 +3,59 @@
 
 <head>
     <meta charset="utf-8">
-    <title>Nice Background Animation</title>
+    <title>Googly Eyes!</title>
     <script src="lib/gl-matrix.js"></script>
     <link href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" rel="stylesheet">
 </head>
 
-<body class="h-screen">
-    <div class="flex justify-center items-center">
-        <canvas id="canvas"></canvas>
+<body class="h-screen bg-gray-400">
+    <div class="h-screen relative">
+        <!-- Layer for Eyes -->
+        <canvas id="layer1" class="absolute z-10"></canvas>
+        <!-- Layer for picture -->
+        <canvas id="layer2" class="absolute z-0"></canvas>
     </div>
 
     <script>
-        const canvas = document.getElementById("canvas");
-        const ctx = canvas.getContext("2d");
+        const layer1 = document.getElementById("layer1");
+        const layer2 = document.getElementById("layer2");
 
+        //stores coordinates of the middle of the canvases
         let midX;
         let midY;
 
-        let mouseX;
-        let mouseY;
+        //stores mouse position inside the canvas
+        let mouseX = 0;
+        let mouseY = 0;
 
-        resizeCanvas();
-        window.addEventListener("resize", resizeCanvas);
-        canvas.addEventListener("mousemove", function (e) {
-            let cRect = canvas.getBoundingClientRect();
+        //load Image
+        const img = new Image();
+        img.src = "./img/Mona_Lisa_2.PNG";
+        img.onload = function () {
+            //initialize both layers
+
+            layer1.height = img.height;
+            layer1.width = img.width;
+            centerCanvas(layer1);
+            layer1.getContext("2d").drawImage(img, 0, 0);
+
+            layer2.height = layer1.height;
+            layer2.width = layer1.width;
+            centerCanvas(layer2);
+
+            getMid(layer2);
+            draw();
+        }
+
+        //recenter canvases if window gets resized
+        window.addEventListener("resize", function () { centerCanvas(layer1); centerCanvas(layer2); });
+
+        //let eyes follow the mousepointer
+        layer1.addEventListener("mousemove", function (e) {
+            /* calculate the position of the mousepointer inside the canvas (layer1 because its the top layer, so the event can be triggered) */
 
             //relative position of the canvas
+            let cRect = layer1.getBoundingClientRect();
             let canvX = cRect.x;
             let canvY = cRect.y;
 
@@ -41,39 +68,45 @@
             mouseY = Math.round(mousePosY - canvY);
 
             //display mouse position on canvas
+            /*
+            let ctx = layer2.getContext("2d");
             ctx.font = "16px Mono";
-            ctx.clearRect(0, 0, 10000, 10000);
-            ctx.strokeRect(0, 0, 127, 30);
+            ctx.fillStyle = "white";
+            ctx.clearRect(0, 0, layer2.width, layer2.height);
             ctx.fillText("X: " + mouseX + " Y: " + mouseY, 10, 20);
+            */
 
+            //draw eyes after the update of the variables
             draw();
 
         })
 
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            getMid();
-            draw();
+        function centerCanvas (canvas) {
+            let parentWidth = canvas.parentElement.offsetWidth;
+            let canvasWidth = canvas.width;
+            let parentHeight = canvas.parentElement.offsetHeight;
+            let canvasHeight = canvas.height;
+
+            let left = Math.abs(Math.max(parentWidth / 2 - canvasWidth / 2, 0));
+            canvas.style.left = `${left}px`;
+            let top = Math.abs(Math.max(parentHeight / 2 - canvasHeight / 2, 0));
+            canvas.style.top = `${top}px`;
         }
 
-        function getMid() {
+
+        function getMid (canvas) {
             midX = Math.round(canvas.width / 2);
             midY = Math.round(canvas.height / 2);
-            ctx.fill();
         }
 
-        function draw() {
-
-            drawEye(midX - 100, midY, 50);
-            drawEye(midX + 100, midY, 50)
-
-
+        function draw () {
+            drawEye(layer2, 244, 209, 15);
+            drawEye(layer2, 304, 209, 16);
         }
 
-        function drawEye(posX, posY, r) {
+        function drawEye (canvas, posX, posY, r) {
 
-            let innerBorderRadius = r / 2;
+            let innerBorderRadius = r / 4;
             let pupilRadius = r / 3;
 
             //directionvector from eye to mouse
@@ -89,20 +122,26 @@
                 dirY = (dirY / len) * innerBorderRadius;
             }
 
-            //draw pupil
-            ctx.beginPath();
-            ctx.arc(posX + dirX, posY + dirY, pupilRadius, 0, Math.PI * 2, true);
-            ctx.fill();
-            ctx.closePath();
+
+            let ctx = canvas.getContext("2d");
             //draw outer circle
             ctx.beginPath();
             ctx.arc(posX, posY, r, 0, Math.PI * 2, true);
             ctx.stroke();
+            ctx.fillStyle = "white";
+            ctx.fill();
             ctx.closePath();
+            //draw pupil
+            ctx.beginPath();
+            ctx.arc(posX + dirX, posY + dirY, pupilRadius, 0, Math.PI * 2, true);
+            ctx.fillStyle = "black";
+            ctx.fill();
+            ctx.closePath();
+
         }
 
-
     </script>
+
 </body>
 
 </html>
