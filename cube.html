@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Würfel</title>
     <script src="lib/gl-matrix.js"></script>
+    <script src="./cube-util.js"></script>
     <link href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" rel="stylesheet">
 </head>
 
@@ -13,45 +14,99 @@
     </div>
 
     <script>
-        var vertexShaderSource = `
-       precision mediump float;
 
-       attribute vec3 position;
-       attribute vec3 normal;
+        const canvas = document.getElementById("canvas");
+        const context = canvas.getContext("experimental-webgl");
+        if (!context) {
+            alert("Browser does not support WebGL.");
+        }
 
-       uniform mat4 Model;
-       uniform mat4 View;
-       uniform mat4 Projection;
-       uniform mat4 normalMatrix;
+        //stores coordinates of the middle of the canvas
+        let midX = 1;
+        let midY = 1;
+        //position of mouse on canvas
+        let mouseX = 0;
+        let mouseY = 0;
+        //position of mouse relative to middle of th canvas
+        let relX = 0;
+        let relY = 0;
 
-       varying vec3 normal_out;
-     
-       void main(){
-           gl_Position = Projection * View * Model * vec4(position, 1.0);
-           normal_out = (normalMatrix * vec4(normal, 1.0)).xyz;
 
-       }
-       `
-        var fragmentShaderSource = `
-       precision mediump float;
+        canvas.addEventListener("mousemove", function (e) {
+            /* calculate the position of the mousepointer inside the canvas (layer1 because its the top layer, so the event can be triggered) */
 
-       uniform vec3 lightDir;
+            //relative position of the canvas
+            let cRect = canvas.getBoundingClientRect();
+            let canvX = cRect.x;
+            let canvY = cRect.y;
 
-       varying vec3 normal_out;
+            //general position of mouse
+            let mousePosX = e.clientX;
+            let mousePosY = e.clientY;
 
-       void main(){
-        
-           float lightInt = max(dot(normal_out, -lightDir), 0.0);
-           gl_FragColor = vec4(0.5*lightInt, 0.5*lightInt, 0.5*lightInt, 1.0);
-       }
-       `
+            //position of mouse on canvas
+            mouseX = Math.round(mousePosX - canvX);
+            mouseY = Math.round(mousePosY - canvY);
 
-        var InitGL = function () {
-            var canvas = document.getElementById("canvas")
-            var context = canvas.getContext("experimental-webgl")
-            if (!context) {
-                alert("Browser does not support WebGL.")
+            //
+            relX = mousePosX - midX;
+            relY = mousePosY - midY;
+
+            console.log("mouse: " + mouseX + "/" + mouseY)
+            console.log("rel: " + relX + "/" + relY);
+
+            getMid();
+
+
+        })
+
+        function getMid () {
+            midX = Math.round(canvas.width / 2);
+            midY = Math.round(canvas.height / 2);
+            console.log("mid: " + midX + "/" + midY);
+        }
+
+        //calculate rotationangles for x and y axis
+        function calculateAngleX () {
+            console.log(relX + "  " + midX)
+            let ratioX = relX / midX;
+            let angle = ratioX * glMatrix.glMatrix.toRadian(25);
+            return angle;
+        }
+        function calculateAngleY () {
+            let ratioY = relY / midY;
+            let angle = ratioY * glMatrix.glMatrix.toRadian(25);
+            return angle;
+
+        }
+
+        //first load all the resources and then start the render process
+        loadTextResource('./vertexShader.glsl', (vsErr, vsText) => {
+            if (vsErr) {
+                alert('Error loading Vertex Shader Source (see console)');
+                console.log(vsErr);
+            } else {
+                loadTextResource('./fragmentShader.glsl', (fsErr, fsText) => {
+                    if (fsErr) {
+                        alert('Error loading Fragment Shader Source (see console)');
+                        console.log(fsERR);
+                    } else {
+                        loadJSONResource('./img/susan.json', (modelErr, modelJSON) => {
+                            if (modelErr) {
+                                alert('Error loading Model JSON (see console)');
+                                console.log(modelErr);
+                            } else {
+                                InitGL(vsText, fsText, modelJSON);
+                            }
+                        })
+                    }
+                })
             }
+        })
+
+
+
+        function InitGL (vertexShaderSource, fragmentShaderSource, modelJSON) {
 
             context.clearColor(0.2, 0.3, 0.8, 1.0)
             context.clear(context.COLOR_BUFFER_BIT | context.DEPTH_BUFFER_BIT)
@@ -91,74 +146,47 @@
             }
 
             //create model data and buffers
-            //position 3f, texcoords 2f, normals 3f
-            var cube = [
-                -0.5, -0.5, -0.5, 0.0, 0.0, 0.0, 0.0, -1.0,
-                0.5, -0.5, -0.5, 1.0, 0.0, 0.0, 0.0, -1.0,
-                0.5, 0.5, -0.5, 1.0, 1.0, 0.0, 0.0, -1.0, //hinten
-                0.5, 0.5, -0.5, 1.0, 1.0, 0.0, 0.0, -1.0,
-                -0.5, 0.5, -0.5, 0.0, 1.0, 0.0, 0.0, -1.0,
-                -0.5, -0.5, -0.5, 0.0, 0.0, 0.0, 0.0, -1.0,
+            let vertices = modelJSON.meshes[0].vertices;
+            let normals = modelJSON.meshes[0].normals;
+            let indices = [].concat.apply([], modelJSON.meshes[0].faces);
 
-                -0.5, -0.5, 0.5, 0.0, 0.0, 0.0, 0.0, 1.0,
-                0.5, -0.5, 0.5, 1.0, 0.0, 0.0, 0.0, 1.0,
-                0.5, 0.5, 0.5, 1.0, 1.0, 0.0, 0.0, 1.0,
-                0.5, 0.5, 0.5, 1.0, 1.0, 0.0, 0.0, 1.0, //vorne	
-                -0.5, 0.5, 0.5, 0.0, 1.0, 0.0, 0.0, 1.0,
-                -0.5, -0.5, 0.5, 0.0, 0.0, 0.0, 0.0, 1.0,
 
-                -0.5, 0.5, 0.5, 1.0, 0.0, -1.0, 0.0, 0.0,
-                -0.5, 0.5, -0.5, 1.0, 1.0, -1.0, 0.0, 0.0,
-                -0.5, -0.5, -0.5, 0.0, 1.0, -1.0, 0.0, 0.0,
-                -0.5, -0.5, -0.5, 0.0, 1.0, -1.0, 0.0, 0.0,//links
-                -0.5, -0.5, 0.5, 0.0, 0.0, -1.0, 0.0, 0.0,
-                -0.5, 0.5, 0.5, 1.0, 0.0, -1.0, 0.0, 0.0,
+            var vertexBuffer = context.createBuffer();
+            context.bindBuffer(context.ARRAY_BUFFER, vertexBuffer);
+            context.bufferData(context.ARRAY_BUFFER, new Float32Array(vertices), context.STATIC_DRAW);
 
-                0.5, 0.5, 0.5, 1.0, 0.0, 1.0, 0.0, 0.0,
-                0.5, 0.5, -0.5, 1.0, 1.0, 1.0, 0.0, 0.0,
-                0.5, -0.5, -0.5, 0.0, 1.0, 1.0, 0.0, 0.0,//rechts
-                0.5, -0.5, -0.5, 0.0, 1.0, 1.0, 0.0, 0.0,
-                0.5, -0.5, 0.5, 0.0, 0.0, 1.0, 0.0, 0.0,
-                0.5, 0.5, 0.5, 1.0, 0.0, 1.0, 0.0, 0.0,
+            var normalBuffer = context.createBuffer();
+            context.bindBuffer(context.ARRAY_BUFFER, normalBuffer);
+            context.bufferData(context.ARRAY_BUFFER, new Float32Array(normals), context.STATIC_DRAW);
 
-                -0.5, -0.5, -0.5, 0.0, 1.0, 0.0, -1.0, 0.0,
-                0.5, -0.5, -0.5, 1.0, 1.0, 0.0, -1.0, 0.0,
-                0.5, -0.5, 0.5, 1.0, 0.0, 0.0, -1.0, 0.0,//unten
-                0.5, -0.5, 0.5, 1.0, 0.0, 0.0, -1.0, 0.0,
-                -0.5, -0.5, 0.5, 0.0, 0.0, 0.0, -1.0, 0.0,
-                -0.5, -0.5, -0.5, 0.0, 1.0, 0.0, -1.0, 0.0,
+            var indexBuffer = context.createBuffer();
+            context.bindBuffer(context.ELEMENT_ARRAY_BUFFER, indexBuffer);
+            context.bufferData(context.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), context.STATIC_DRAW);
 
-                -0.5, 0.5, -0.5, 0.0, 1.0, 0.0, 1.0, 0.0,
-                0.5, 0.5, -0.5, 1.0, 1.0, 0.0, 1.0, 0.0,
-                0.5, 0.5, 0.5, 1.0, 0.0, 0.0, 1.0, 0.0,//oben
-                0.5, 0.5, 0.5, 1.0, 0.0, 0.0, 1.0, 0.0,
-                -0.5, 0.5, 0.5, 0.0, 0.0, 0.0, 1.0, 0.0,
-                -0.5, 0.5, -0.5, 0.0, 1.0, 0.0, 1.0, 0.0
-            ]
-            var vertexBuffer = context.createBuffer()
-            context.bindBuffer(context.ARRAY_BUFFER, vertexBuffer)
-            context.bufferData(context.ARRAY_BUFFER, new Float32Array(cube), context.STATIC_DRAW)
-            var positionAttribLocation = context.getAttribLocation(program, 'position')
-            var normalAttribLocation = context.getAttribLocation(program, 'normal')
+            context.bindBuffer(context.ARRAY_BUFFER, vertexBuffer);
+            var positionAttribLocation = context.getAttribLocation(program, 'position');
             context.vertexAttribPointer(
                 positionAttribLocation,
                 3,
                 context.FLOAT,
                 context.FALSE,
-                8 * Float32Array.BYTES_PER_ELEMENT,
+                3 * Float32Array.BYTES_PER_ELEMENT,
                 0
-            )
+            );
+            context.enableVertexAttribArray(positionAttribLocation);
+
+            context.bindBuffer(context.ARRAY_BUFFER, normalBuffer);
+            var normalAttribLocation = context.getAttribLocation(program, 'normal')
             context.vertexAttribPointer(
                 normalAttribLocation,
                 3,
                 context.FLOAT,
                 context.FALSE,
-                8 * Float32Array.BYTES_PER_ELEMENT,
-                5 * Float32Array.BYTES_PER_ELEMENT,
+                3 * Float32Array.BYTES_PER_ELEMENT,
                 0
             )
-            context.enableVertexAttribArray(positionAttribLocation);
             context.enableVertexAttribArray(normalAttribLocation);
+
 
             //uniforms
             var u_ModelLocation = context.getUniformLocation(program, "Model")
@@ -174,7 +202,7 @@
                 canvas.height = window.innerHeight;
                 //clear screen
                 context.clearColor(0.2, 0.3, 0.8, 1.0)
-                context.clear(context.COLOR_BUFFER_BIT | context.DEPTH_BUFFER_BIT)            
+                context.clear(context.COLOR_BUFFER_BIT | context.DEPTH_BUFFER_BIT)
                 context.viewport(0, 0, canvas.clientWidth, canvas.clientHeight);
 
 
@@ -182,21 +210,26 @@
                 context.useProgram(program);
 
                 //set uniforms
-                let angle = glMatrix.glMatrix.toRadian(timestamp / 10 % 360)
+                let angleX = calculateAngleX();
+                let angleY = calculateAngleY();
 
-                let Model = glMatrix.mat4.create()
-                glMatrix.mat4.rotate(Model, Model, angle, new Float32Array([0, 1, 0]))
+                let Model = glMatrix.mat4.create();
+                glMatrix.mat4.rotate(Model, Model, glMatrix.glMatrix.toRadian(-90), new Float32Array([1, 0, 0]));
+                glMatrix.mat4.rotate(Model, Model, angleX, new Float32Array([0, 0, 1]));
+                glMatrix.mat4.rotate(Model, Model, angleY, new Float32Array([1, 0, 0]));
+
+
                 context.uniformMatrix4fv(u_ModelLocation, false, Model)
 
                 let View = glMatrix.mat4.create()
-                let eyePos = glMatrix.vec3.fromValues(5, 5, 5)
+                let eyePos = glMatrix.vec3.fromValues(0, 0, 5)
                 let center = glMatrix.vec3.fromValues(0, 0, 0)
                 let up = glMatrix.vec3.fromValues(0, 1, 0)
                 glMatrix.mat4.lookAt(View, eyePos, center, up)
                 context.uniformMatrix4fv(u_ViewLocation, false, View)
 
                 let Projection = glMatrix.mat4.create()
-                glMatrix.mat4.perspective(Projection, glMatrix.glMatrix.toRadian(45), canvas.width / canvas.height, 0.1, 1000)
+                glMatrix.mat4.perspective(Projection, glMatrix.glMatrix.toRadian(45), canvas.width / canvas.height, 1, 100)
                 context.uniformMatrix4fv(u_ProjectionLocation, false, Projection)
 
                 let normalMatrix = glMatrix.mat4.create()
@@ -209,7 +242,7 @@
                 context.uniform3f(u_lightDirLocation, lightDir[0], lightDir[1], lightDir[2])
 
                 //draw call
-                context.drawArrays(context.TRIANGLES, 0, cube.length / 8)
+                context.drawElements(context.TRIANGLES, indices.length, context.UNSIGNED_SHORT, 0);
 
                 window.requestAnimationFrame(drawScene)
             }
@@ -220,6 +253,8 @@
 
         }
 
-        InitGL();
+
+
+
     </script>
 </body>
