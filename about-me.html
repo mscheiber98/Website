@@ -8,21 +8,76 @@
 </head>
 
 <body style="background-color: rgb(167 243 208);">
-    <div class=" grid grid-cols-2 gap-y-10 justify-items-center">
-    <!-- Überschrift -->
-    <h1 class="col-span-2 text-7xl font-mono py-10">Generic Header</h1>
+    <div class="grid grid-cols-2 gap-y-10 justify-items-center mb-48">
+        <!-- Überschrift -->
+        <h1 class="col-span-2 text-7xl font-mono py-10">Generic Header</h1>
 
-    <!-- Bild und Textbox -->
-    <img src="./img/random-grid.jpg" alt="Alternativer Text!" class="col-span-1">
-    <div class="justify-self-start col-span-1">
-        <p id="einleitung" class="mr-28">Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy
-            eirmod tempor
-            invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo
-            dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.
-            Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut
-            labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et
-            ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.</p>
+        <!-- Bild und Textbox -->
+        <img src="./img/random-grid.jpg" alt="Alternativer Text!" class="col-span-1">
+        <div class="justify-self-start col-span-1">
+            <p id="einleitung" class="mr-28">Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy
+                eirmod tempor
+                invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo
+                dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.
+                Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut
+                labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et
+                ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.</p>
+        </div>
+
+        <!-- Zweite Überschrift -->
+        <h1 class="col-span-2 text-7xl font-mono py-10">Programming Skills</h1>
+
+        <!-- Display Programming skills -->
+        <div class="col-span-2 grid grid-cols-2 gap-y-10 justify-items-center items-center gap-x-10">
+            <p class="text-4xl font-mono"> HTML: </p>
+            <canvas id="c1" width="500px" height="50px" class=" border-black border-2"></canvas>
+
+            <p class="text-4xl font-mono"> CSS: </p>
+            <canvas id="c2" width="500px" height="50px" class=" border-black border-2"></canvas>
+
+            <p class="text-4xl font-mono"> JS: </p>
+            <canvas id="c3" width="500px" height="50px" class=" border-black border-2"></canvas>
+        </div>
     </div>
 
-    </div>
+    <script>
+        let c1 = document.getElementById("c1");
+        let ctx1 = c1.getContext("2d");
+        let c2 = document.getElementById("c2");
+        let ctx2 = c2.getContext("2d");
+        let c3 = document.getElementById("c3");
+        let ctx3 = c3.getContext("2d");
+        let startDate;
+
+        window.onload = function () {
+            startDate = Date.now();
+            animateBar(c1, ctx1, 0.3);
+            animateBar(c2, ctx2, 0.4);
+            animateBar(c3, ctx3, 0.5);
+
+        };
+
+        //get time in ms since page load
+        function getTime () {
+            let endDate = Date.now();
+            return endDate - startDate;
+        };
+
+        //skill should be a number between 0 and 1 
+        function animateBar (canvas, context, skill) {
+            let time = getTime();
+
+            if (time <= 2000* skill) {
+                setTimeout(() => {
+                    progress = (canvas.width - 20) * time / 2000 ;
+                    ctx1.fillStyle = "black";
+                    context.clearRect(0, 0, canvas.width, canvas.height);
+                    context.fillRect(10, 10, progress, canvas.height - 20);
+                    animateBar(canvas, context, skill);
+                }, 1)
+            };
+        }
+
+
+    </script>
 </body>
