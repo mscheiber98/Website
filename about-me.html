@@ -28,7 +28,7 @@
         <h1 class="col-span-2 text-7xl font-mono py-10">Programming Skills</h1>
 
         <!-- Display Programming skills -->
-        <div class="col-span-2 grid grid-cols-2 gap-y-10 justify-items-center items-center gap-x-10">
+        <div class="col-span-2 grid grid-cols-2 gap-y-10 justify-items-center items-center gap-x-10 mt-48">
             <p class="text-4xl font-mono"> HTML: </p>
             <canvas id="c1" width="500px" height="50px" class=" border-black border-2"></canvas>
 
@@ -65,17 +65,33 @@
 
         //skill should be a number between 0 and 1 
         function animateBar (canvas, context, skill) {
-            let time = getTime();
 
-            if (time <= 2000* skill) {
-                setTimeout(() => {
-                    progress = (canvas.width - 20) * time / 2000 ;
-                    ctx1.fillStyle = "black";
-                    context.clearRect(0, 0, canvas.width, canvas.height);
-                    context.fillRect(10, 10, progress, canvas.height - 20);
-                    animateBar(canvas, context, skill);
-                }, 1)
-            };
+            let visTime;
+            let cRect = canvas.getBoundingClientRect();
+
+            setTimeout(() => {
+                if (cRect.top > 0 && cRect.bottom < window.innerHeight) {
+                    visTime = Date.now();
+                    draw();
+                    return;
+                }
+                animateBar(canvas, context, skill)
+            }, 1)
+
+
+            function draw () {
+                let time = Date.now() - visTime;
+                if (time <= 2000 * skill) {
+                    setTimeout(() => {
+                        let cRect = canvas.getBoundingClientRect();
+                        progress = (canvas.width - 20) * time / 2000;
+                        ctx1.fillStyle = "black";
+                        context.clearRect(0, 0, canvas.width, canvas.height);
+                        context.fillRect(10, 10, progress, canvas.height - 20);
+                        draw();
+                    }, 1)
+                };
+            }
         }
 
 
