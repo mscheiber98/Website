@@ -69,13 +69,13 @@
         //calculate rotationangles for x and y axis
         function calculateAngleX () {
             console.log(relX + "  " + midX)
-            let ratioX = relX / midX;
-            let angle = ratioX * glMatrix.glMatrix.toRadian(25);
+            let ratioX = relX / Math.max(midX, midY);
+            let angle = ratioX * glMatrix.glMatrix.toRadian(45);
             return angle;
         }
         function calculateAngleY () {
-            let ratioY = relY / midY;
-            let angle = ratioY * glMatrix.glMatrix.toRadian(25);
+            let ratioY = relY / Math.max(midX, midY);
+            let angle = ratioY * glMatrix.glMatrix.toRadian(45);
             return angle;
 
         }
