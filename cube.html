@@ -80,7 +80,7 @@
 
         }
 
-        //first load all the resources and then start the render process
+   /*      //first load all the resources and then start the render process
         loadTextResource('./vertexShader.glsl', (vsErr, vsText) => {
             if (vsErr) {
                 alert('Error loading Vertex Shader Source (see console)');
@@ -102,7 +102,13 @@
                     }
                 })
             }
-        })
+        }) */
+
+        Promise.all([
+            fetch('./models/susan.json').then(resp => resp.json()),
+            fetch('./shader/vertexShader.glsl').then(resp => resp.text()),
+            fetch('./shader/fragmentShader.glsl').then(resp => resp.text()),
+        ]).then(response => InitGL(response[1], response[2], response[0]))
 
 
 
